@@ -13,3 +13,11 @@
 1. enable service on boot ```sudo systemctl enable air-quality.service```
 1. start the service ```sudo systemctl start air-quality.service```
 1. check service logs ```sudo systemctl status air-quality.service```
+
+## Update hostname
+1. update sudo nano /etc/hostname
+1. update sudo nano /etc/hosts
+1. reboot raspberry
+
+## Access server
+Access the server either via your new hostname or via ```http://raspberrypi:5000/```
