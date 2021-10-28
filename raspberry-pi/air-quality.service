@@ -1,0 +1,12 @@
+[Unit]
+Description=My custom service
+Requires=network.target
+
+[Service]
+Type=idle
+User=pi
+ExecStart=bash /home/pi/air-quality-raspberry-pi/start-air-quality.sh
+
+[Install]
+WantedBy=multi-user.target
+

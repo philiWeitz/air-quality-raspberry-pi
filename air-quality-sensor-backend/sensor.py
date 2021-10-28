@@ -6,8 +6,8 @@ from db import add_air_quality_measurement_to_database, create_database
 
 REFRESH_RATE_IN_MINUTES = 15
 
-# PORT = "/dev/ttyUSB0"
-PORT = "/dev/cu.usbserial-14610"
+PORT = "/dev/ttyUSB0"
+# PORT = "/dev/cu.usbserial-14610"
 
 
 def start_measuring():
