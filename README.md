@@ -1,5 +1,7 @@
 # Air Quality Raspberry PI
 
+This project uses a Raspberry PI 3+ and a SDS011 sensor to collect air quality measurements
+
 ## Install dependencies (raspberry pi)
 1. copy the code into the pi root directory "/home/pi/"
 1. install nodejs (>=12)
