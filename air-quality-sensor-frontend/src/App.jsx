@@ -16,6 +16,7 @@ import {
   getLatest365DaysAirQualityMeasurement,
   getLatest30DaysAirQualityMeasurement,
 } from "./api";
+import { ChocoboAnimation } from "./chocobo-animation";
 
 const App = () => {
   const [dayTrend, setDayTrend] = useState([]);
@@ -90,10 +91,13 @@ const App = () => {
   );
 
   return (
-    <div className="container is-max-widescreen mt-6">
-      {dayTrend && dayTrend.length > 1 && renderDayTrend()}
-      {monthTrend && monthTrend.length > 1 && renderMonthTrend()}
-      {yearTrend && yearTrend.length > 1 && renderYearTrend()}
+    <div>
+      <ChocoboAnimation />
+      <div className="container is-max-widescreen mt-6">
+        {dayTrend && dayTrend.length > 1 && renderDayTrend()}
+        {monthTrend && monthTrend.length > 1 && renderMonthTrend()}
+        {yearTrend && yearTrend.length > 1 && renderYearTrend()}
+      </div>
     </div>
   );
 };
