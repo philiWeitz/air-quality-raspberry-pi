@@ -7,60 +7,119 @@ CREATE_AIR_QUALITY_TABLE_QUERY = """
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pm2p5 REAL,
     pm10 REAL,
-    created_at timestamp  NOT NULL  DEFAULT current_timestamp
+    created_at timestamp NOT NULL DEFAULT current_timestamp
   );
 """
 
-LATEST_MEASUREMENT_QUERY = f"""
-    SELECT pm2p5, pm10, datetime(created_at, 'localtime')
-    FROM air_quality
-    ORDER BY created_at desc
-    LIMIT 1
+CREATE_TEMPERATURE_TABLE_QUERY = """
+  CREATE TABLE IF NOT EXISTS temperature (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    temperature REAL,
+    humidity REAL,
+    created_at timestamp  NOT NULL DEFAULT current_timestamp
+  );
 """
 
-TREND_DATA_24_HOURS = f"""
-    SELECT round(pm2p5, 2), round(pm10, 2), strftime('%H:%M', datetime(created_at, 'localtime')) as created_at
+
+TREND_DATA_AIR_24_HOURS = f"""
+    SELECT 
+        round(pm2p5, 2), 
+        round(pm10, 2), 
+        strftime('%H:%M', datetime(created_at, 'localtime')) as timestamp
     FROM air_quality
     WHERE created_at >= date('now', '-1 days')
     ORDER BY created_at;
 """
 
-MEAN_DATA_24_HOURS = f"""
+TREND_DATA_TEMPERATURE_24_HOURS = f"""
+    SELECT 
+        round(temperature, 2), 
+        round(humidity, 2), 
+        strftime('%H:%M', datetime(created_at, 'localtime')) as timestamp
+    FROM temperature
+    WHERE created_at >= date('now', '-1 days')
+    ORDER BY created_at;
+"""
+
+MEAN_DATA_AIR_24_HOURS = f"""
     SELECT avg(pm2p5) pm2p5, avg(pm10) pm10
     FROM air_quality
     WHERE created_at >= date('now', '-1 days');
 """
 
-TREND_DATA_30_DAYS = f"""
+TREND_DATA_AIR_30_DAYS = f"""
     WITH month_range as (
-        SELECT pm2p5, pm10, strftime('%d.%m.%Y', datetime(created_at, 'localtime')) as created_at
+        SELECT 
+            pm2p5, 
+            pm10, 
+            strftime('%d.%m.%Y', datetime(created_at, 'localtime')) as timestamp,
+            created_at
         FROM air_quality
         WHERE created_at >= date('now', '-30 days') 
         ORDER BY created_at
     )
-    SELECT round(avg(pm2p5), 2) pm2p5, round(avg(pm10), 2) pm10, created_at
+    SELECT round(avg(pm2p5), 2) pm2p5, round(avg(pm10), 2) pm10, timestamp
     FROM month_range
-    GROUP BY created_at
+    GROUP BY timestamp
     ORDER BY max(created_at)
 """
 
-MEAN_DATA_30_DAYS = f"""
+
+TREND_DATA_TEMPERATURE_30_DAYS = f"""
+    WITH month_range as (
+        SELECT 
+            temperature, 
+            humidity, 
+            strftime('%d.%m.%Y', datetime(created_at, 'localtime')) as timestamp,
+            created_at
+        FROM temperature
+        WHERE created_at >= date('now', '-30 days') 
+        ORDER BY created_at
+    )
+    SELECT round(avg(temperature), 2) temperature, round(avg(humidity), 2) humidity, timestamp
+    FROM month_range
+    GROUP BY timestamp
+    ORDER BY max(created_at)
+"""
+
+MEAN_DATA_AIR_30_DAYS = f"""
     SELECT avg(pm2p5), avg(pm10)
     FROM air_quality
     WHERE created_at >= date('now', '-30 days');
 """
 
 
-TREND_DATA_365_DAYS = f"""
+TREND_DATA_AIR_365_DAYS = f"""
     WITH month_range as (
-        SELECT pm2p5, pm10, strftime('%m.%Y', datetime(created_at, 'localtime')) as created_at
+        SELECT 
+            pm2p5, 
+            pm10, 
+            strftime('%m.%Y', datetime(created_at, 'localtime')) as timestamp, 
+            created_at
         FROM air_quality
         WHERE created_at >= date('now', '-365 days') 
         ORDER BY created_at
     )
-    SELECT round(avg(pm2p5), 2) pm2p5, round(avg(pm10), 2), created_at
+    SELECT round(avg(pm2p5), 2) pm2p5, round(avg(pm10), 2) pm10, timestamp
     FROM month_range
-    GROUP BY created_at
+    GROUP BY timestamp
+    ORDER BY max(created_at)
+"""
+
+TREND_DATA_TEMPERATURE_365_DAYS = f"""
+    WITH month_range as (
+        SELECT 
+            temperature, 
+            humidity, 
+            strftime('%m.%Y', datetime(created_at, 'localtime')) as timestamp, 
+            created_at
+        FROM temperature
+        WHERE created_at >= date('now', '-365 days') 
+        ORDER BY created_at
+    )
+    SELECT round(avg(temperature), 2) temperature, round(avg(humidity), 2) humidity, timestamp
+    FROM month_range
+    GROUP BY timestamp
     ORDER BY max(created_at)
 """
 
@@ -74,6 +133,8 @@ MEAN_DATA_365_DAYS = f"""
 def create_database():
     connection = sqlite3.connect(DB_NAME)
     connection.execute(CREATE_AIR_QUALITY_TABLE_QUERY)
+    connection.execute(CREATE_TEMPERATURE_TABLE_QUERY)
+    connection.commit()
     connection.close()
 
 
@@ -89,35 +150,82 @@ def add_air_quality_measurement_to_database(measurement):
     connection.close()
 
 
-def get_latest_air_quality_measurement():
+def add_temperature_measurement_to_database(measurement):
+    insert_query = f"""
+        INSERT INTO temperature (temperature, humidity)  
+        VALUES({measurement['temperature']}, {measurement['humidity']});
+    """
+
     connection = sqlite3.connect(DB_NAME)
-    measurement = list(connection.execute(LATEST_MEASUREMENT_QUERY))
+    connection.execute(insert_query)
+    connection.commit()
     connection.close()
 
-    return (
-        {"pm2p5": measurement[0][1], "pm10": measurement[0][2]}
-        if len(measurement) > 0
-        else {}
-    )
+
+def temperature_measurement_to_response(measurement):
+    return {
+        "temperature": measurement[0],
+        "humidity": measurement[1],
+        "timestamp": measurement[2],
+    }
 
 
-def measurement_to_response(measurement):
+def get_temperature_last_24_hours():
+    connection = sqlite3.connect(DB_NAME)
+    measurements = list(connection.execute(TREND_DATA_TEMPERATURE_24_HOURS))
+    connection.close()
+
+    return {
+        "measurements": [
+            temperature_measurement_to_response(measurement)
+            for measurement in measurements
+        ]
+    }
+
+
+def get_temperature_last_30_days():
+    connection = sqlite3.connect(DB_NAME)
+    measurements = list(connection.execute(TREND_DATA_TEMPERATURE_30_DAYS))
+    connection.close()
+
+    return {
+        "measurements": [
+            temperature_measurement_to_response(measurement)
+            for measurement in measurements
+        ]
+    }
+
+
+def get_temperature_last_365_days():
+    connection = sqlite3.connect(DB_NAME)
+    measurements = list(connection.execute(TREND_DATA_TEMPERATURE_365_DAYS))
+    connection.close()
+
+    return {
+        "measurements": [
+            temperature_measurement_to_response(measurement)
+            for measurement in measurements
+        ]
+    }
+
+
+def air_measurement_to_response(measurement):
     return {
         "pm2p5": measurement[0],
         "pm10": measurement[1],
-        "created_at": measurement[2],
+        "timestamp": measurement[2],
     }
 
 
-def get_last_24_hours():
+def get_air_last_24_hours():
     connection = sqlite3.connect(DB_NAME)
-    measurements = list(connection.execute(TREND_DATA_24_HOURS))
-    mean = list(connection.execute(MEAN_DATA_24_HOURS))
+    measurements = list(connection.execute(TREND_DATA_AIR_24_HOURS))
+    mean = list(connection.execute(MEAN_DATA_AIR_24_HOURS))
     connection.close()
 
     return {
         "measurements": [
-            measurement_to_response(measurement)
+            air_measurement_to_response(measurement)
             for measurement in measurements
         ],
         "mean": {
@@ -127,15 +235,15 @@ def get_last_24_hours():
     }
 
 
-def get_last_30_days():
+def get_air_last_30_days():
     connection = sqlite3.connect(DB_NAME)
-    measurements = list(connection.execute(TREND_DATA_30_DAYS))
-    mean = list(connection.execute(MEAN_DATA_30_DAYS))
+    measurements = list(connection.execute(TREND_DATA_AIR_30_DAYS))
+    mean = list(connection.execute(MEAN_DATA_AIR_30_DAYS))
     connection.close()
 
     return {
         "measurements": [
-            measurement_to_response(measurement)
+            air_measurement_to_response(measurement)
             for measurement in measurements
         ],
         "mean": {
@@ -145,15 +253,15 @@ def get_last_30_days():
     }
 
 
-def get_last_365_days():
+def get_air_last_365_days():
     connection = sqlite3.connect(DB_NAME)
-    measurements = list(connection.execute(TREND_DATA_365_DAYS))
+    measurements = list(connection.execute(TREND_DATA_AIR_365_DAYS))
     mean = list(connection.execute(MEAN_DATA_365_DAYS))
     connection.close()
 
     return {
         "measurements": [
-            measurement_to_response(measurement)
+            air_measurement_to_response(measurement)
             for measurement in measurements
         ],
         "mean": {

@@ -4,10 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db import (
     create_database,
-    get_last_24_hours,
-    get_last_30_days,
-    get_last_365_days,
-    get_latest_air_quality_measurement,
+    get_air_last_24_hours,
+    get_air_last_30_days,
+    get_air_last_365_days,
+    get_temperature_last_24_hours,
+    get_temperature_last_30_days,
+    get_temperature_last_365_days,
 )
 
 app = FastAPI()
@@ -29,24 +31,34 @@ def read_root():
     return {"Health": "Ok"}
 
 
-@app.get("/measurements/latest")
+@app.get("/measurements/temperature/latest/day")
 def get_latest_measurement():
-    return get_latest_air_quality_measurement()
+    return get_temperature_last_24_hours()
 
 
-@app.get("/measurements/latest/day")
-def get_latest_measurement():
-    return get_last_24_hours()
+@app.get("/measurements/temperature/latest/month")
+def get_air_latest_measurement():
+    return get_temperature_last_30_days()
 
 
-@app.get("/measurements/latest/month")
-def get_latest_measurement():
-    return get_last_30_days()
+@app.get("/measurements/temperature/latest/year")
+def get_air_latest_measurement():
+    return get_temperature_last_365_days()
 
 
-@app.get("/measurements/latest/year")
-def get_latest_measurement():
-    return get_last_365_days()
+@app.get("/measurements/air/latest/day")
+def get_air_latest_measurement():
+    return get_air_last_24_hours()
+
+
+@app.get("/measurements/air/latest/month")
+def get_air_latest_measurement():
+    return get_air_last_30_days()
+
+
+@app.get("/measurements/air/latest/year")
+def get_air_latest_measurement():
+    return get_air_last_365_days()
 
 
 if __name__ == "__main__":

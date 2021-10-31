@@ -6,7 +6,8 @@ export const ChocoboAnimation = () => {
   const [resetAnimation, setResetAnimation] = useState(false);
 
   const springProps = useSpring({
-    delay: 1000,
+    position: "absolute",
+    zIndex: 2,
     reset: resetAnimation,
     transform: "translateX(-500px)",
     config: {
@@ -19,7 +20,7 @@ export const ChocoboAnimation = () => {
       setResetAnimation(false);
     },
     onRest: () => {
-      setTimeout(() => setResetAnimation(true), Math.random() * 10000);
+      setTimeout(() => setResetAnimation(true), Math.random() * 10000 + 20000);
     },
   });
 
