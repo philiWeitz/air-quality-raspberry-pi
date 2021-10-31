@@ -27,7 +27,7 @@ TREND_DATA_AIR_24_HOURS = f"""
         round(pm10, 2), 
         strftime('%H:%M', datetime(created_at, 'localtime')) as timestamp
     FROM air_quality
-    WHERE created_at >= date('now', '-1 days')
+    WHERE created_at >= datetime('now', '-1 days')
     ORDER BY created_at;
 """
 
@@ -37,14 +37,14 @@ TREND_DATA_TEMPERATURE_24_HOURS = f"""
         round(humidity, 2), 
         strftime('%H:%M', datetime(created_at, 'localtime')) as timestamp
     FROM temperature
-    WHERE created_at >= date('now', '-1 days')
+    WHERE created_at >= datetime('now', '-1 days')
     ORDER BY created_at;
 """
 
 MEAN_DATA_AIR_24_HOURS = f"""
     SELECT avg(pm2p5) pm2p5, avg(pm10) pm10
     FROM air_quality
-    WHERE created_at >= date('now', '-1 days');
+    WHERE created_at >= datetime('now', '-1 days');
 """
 
 TREND_DATA_AIR_30_DAYS = f"""
