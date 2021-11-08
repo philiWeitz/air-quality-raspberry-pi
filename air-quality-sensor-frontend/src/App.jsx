@@ -19,7 +19,8 @@ import {
   getLatest30DaysTemperatureMeasurement,
   getLatest365DaysTemperatureMeasurement,
 } from "./api";
-import { ChocoboAnimation } from "./chocobo-animation";
+import { ChocoboAnimation } from "./ChocoboAnimation";
+import { CustomPieChart } from "./CustomPieChart";
 
 const App = () => {
   const [dayAirTrend, setDayAirTrend] = useState([]);
@@ -57,7 +58,7 @@ const App = () => {
   useEffect(() => {
     fetchData();
 
-    setTimeout(() => setShowAnimation(true), 10000)
+    setTimeout(() => setShowAnimation(true), 10000);
 
     const intervalId = setInterval(() => {
       getLatest24HoursAirQualityMeasurement().then((data) => {
@@ -230,10 +231,88 @@ const App = () => {
     </div>
   );
 
+  const renderPieCharts = () => {
+    const pm2p5 = [];
+    const pm10 = [];
+    const temperature = [];
+    const humidity = [];
+
+    if (dayAirTrend.length > 0) {
+      const trend = dayAirTrend[dayAirTrend.length - 1];
+
+      pm2p5.push({ pm2p5: trend.pm2p5 });
+      pm2p5.push({ pm2p5: Math.max(0, 20 - trend.pm2p5) });
+      pm10.push({ pm10: trend.pm10 });
+      pm10.push({ pm10: Math.max(0, 40 - trend.pm10) });
+    }
+
+    if (dayTemperatureTrend.length > 0) {
+      const trend = dayTemperatureTrend[dayTemperatureTrend.length - 1];
+
+      temperature.push({ temperature: trend.temperature });
+      humidity.push({ humidity: trend.humidity });
+      humidity.push({ humidity: 100 - trend.humidity });
+    }
+
+    return (
+      <div className="box mb-6 pb-6">
+        <div className="columns">
+          {dayAirTrend.length > 0 && (
+            <div className="column is-half-desktop is-flex is-justify-content-space-around">
+              <CustomPieChart
+                width={150}
+                heigh={150}
+                label={`${pm2p5[0].pm2p5}`}
+                caption="PM 2.5"
+                data={pm2p5}
+                dataKey="pm2p5"
+                color="#D54C4C"
+              />
+              <CustomPieChart
+                width={150}
+                heigh={150}
+                label={`${pm10[0].pm10}`}
+                caption="PM 10"
+                data={pm10}
+                dataKey="pm10"
+                color="#D54C4C"
+              />
+            </div>
+          )}
+          {dayTemperatureTrend.length > 0 && (
+            <div className="column is-half-desktop is-flex is-justify-content-space-around">
+              <CustomPieChart
+                width={150}
+                heigh={150}
+                label={`${temperature[0].temperature}°C`}
+                caption="Temperature"
+                data={temperature}
+                dataKey="temperature"
+                color="#00C1D4"
+              />
+              <CustomPieChart
+                width={150}
+                heigh={150}
+                label={`${humidity[0].humidity}%`}
+                caption="Humidity"
+                data={humidity}
+                dataKey="humidity"
+                color="#00C1D4"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       {showAnimation && <ChocoboAnimation />}
+
       <div className="container is-max-widescreen mt-6">
+        {renderPieCharts()}
+
         <div className="box mb-6">
           {dayAirTrend.length > 1 && renderDayTrend()}
           {monthAirTrend.length > 1 && renderMonthTrend()}
